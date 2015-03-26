@@ -45,16 +45,16 @@ Getting Started
 
 Notes
 -----
-The cSender and cReceiver instances can be on the same machine or on two
-different machines. By default cSender broadcasts to all machines on the local
+The `cSender` and `cReceiver` instances can be on the same machine or on two
+different machines. By default `cSender` broadcasts to all machines on the local
 subnet.
 
-cSender.fSendMessage is used to send a message that consist of one value
-converted to a string using JSON.stringify. cReveiver emits one message event
-for each such message received, with two parameters. The first parameter is an
-Error object if an invalid message was received or undefined if the message was
-valid. The second parameter is the value that was sent, reconstructed from the
-data in the message using JSON.parse.
+`cSender.fSendMessage` is used to send a message that consist of one value
+converted to a string using `JSON.stringify`. `cReveiver` emits one `message`
+event for each such message received, with two parameters. The first parameter
+is an `_Error_` object if an invalid message was received or undefined if the
+message was valid. The second parameter is the value that was sent,
+reconstructed from the data in the message using `JSON.parse`.
 
 The protocol used to transmit data is simple and robust. Each message sent
 starts with a string that represents the length of the JSON data in the message,
@@ -78,62 +78,62 @@ API
 Can be used to send values as JSON to one or more receivers.
 
 #### Constructors:
-##### `oUDPJSONSender = [new] mUDPJSON.cSender(Object dxOptions);`
+##### `[new] mUDPJSON.cSender(_Object_ dxOptions);`
 Used to send values as JSON data over UDP.
 Where `dxOptions` is an object that can have the following properties:
-- uIPVersion: IP version to use (valid values: 4 (default), 6).
-- sHostname: Target computer (default: broadcast to local subnet).
-- uPort: port number to send to (default: 28876).
+- `_Number_ uIPVersion`: IP version to use (valid values: 4 (default), 6).
+- `_String_ sHostname`: Target computer (default: broadcast to local subnet).
+- `_Number_ uPort`: port number to send to (default: 28876).
 
 #### Events:
-##### `error`, parameter: `Error oError`
+##### `error`, parameter: `_Error_ oError`
 Emitted when there is a network error.
 ##### `start`
-Emitted when the cSender instance is ready to send messages. You do not need to
-wait until this event is emitted before sending messages: these are queued
-until the cSender instance is ready to send them.
+Emitted when the `cSender` instance is ready to send messages. You do not need
+to wait until this event is emitted before sending messages: these are queued
+until the `cSender` instance is ready to send them.
 ##### `stop`
-Emitted when the cSender instance has stopped sending messages. This happens
+Emitted when the `cSender` instance has stopped sending messages. This happens
 when there is a network error or after you tell the sender to stop.
 
 #### Methods:
-##### `fSendMessage(Any xMessage, Function fCallback)`
-Convert the data in `xMessage`. `fCallback(Boolean bSuccess)` is called when the
-message has been sent (`bSuccess == true`) or when there was an error
+##### `fSendMessage(_Any_ xMessage, _Function_ fCallback)`
+Convert the data in `xMessage`. `fCallback(_Boolean_ bSuccess)` is called when
+the message has been sent (`bSuccess == true`) or when there was an error
 (`bSuccess == false`). 
 
 ##### `fStop()`
-Stop the cSender instance.
+Stop the `cSender` instance.
 
 ### `class cReceiver`
 Used to receive values as JSON data over UDP.
 
 #### Constructors:
-##### `oUDPJSONReceiver = [new] mUDPJSON.cReceiver(Object dxOptions);`
+##### `[new] mUDPJSON.cReceiver(_Object_ dxOptions);`
 Used to receive values as JSON data over UDP.
 Where `dxOptions` is an object that can have the following properties:
-- uIPVersion: IP version to use (valid values: 4 (default), 6).
-- sHostname: Network device to bind to (default: computer name, use `localhost`
-             if you want to receive messages only from cSender instances on the
-             same machine).
-- uPort: port number to receive messages on (default: 28876).
+- `_Number_ uIPVersion`: IP version to use (valid values: 4 (default), 6).
+- `_String_ sHostname`: Network device to bind to (default: computer name, use `localhost`
+             if you want to receive messages only from `cSender` instances on
+             the same machine).
+- `_Number_ uPort`: port number to receive messages on (default: 28876).
 
 #### Events:
-##### `error`, parameter: `Error oError`
+##### `error`, parameter: `_Error_ oError`
 Emitted when there is a network error.
 ##### `start`
-Emitted when the cReceiver instance is ready to receive messages.
-##### `message`, parameters: `Error oError`, `Any xData`
+Emitted when the `cReceiver` instance is ready to receive messages.
+##### `message`, parameters: `_Error_ oError`, `_Any_ xData`
 Emitted when the cReceiver instance has received a message. If the message was
-invalid, oError will contain a description of the problem. Otherwise, oError
+invalid, `oError` will contain a description of the problem. Otherwise, `oError`
 will be undefined and xData will contain the data sent by the cSender instance.
 ##### `stop`
-Emitted when the cReceiver instance has stopped receiving messages. This happens
-when there is a network error or after you tell the receiver to stop.
+Emitted when the `cReceiver` instance has stopped receiving messages. This
+happens when there is a network error or after you tell the receiver to stop.
 
 #### Methods:
 ##### `fStop()`
-Stop the cReceiver instance.
+Stop the `cReceiver` instance.
 
 --------------------------------------------------------------------------------
 
