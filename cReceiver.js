@@ -1,3 +1,5 @@
+module.exports = cReceiver;
+
 var guMaxMessageLength = 1000000; // bytes
 
 var mEvents = require("events"),
@@ -108,4 +110,3 @@ function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
     }
   }
 }
-module.exports = cReceiver;

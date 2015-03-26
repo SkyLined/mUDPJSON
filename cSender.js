@@ -1,3 +1,5 @@
+module.exports = cSender;
+
 var guMaxMessageLength = 1000000; // bytes
 
 var mEvents = require("events"),
@@ -104,5 +106,3 @@ cSender.prototype.fStop = function cSender_fClose() {
   var oThis = this;
   oThis.oSocket.close();
 }
-
-module.exports = cSender;
