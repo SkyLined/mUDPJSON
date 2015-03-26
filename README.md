@@ -102,7 +102,7 @@ Convert the data in `xMessage`. `fCallback(Boolean bSuccess)` is called when
 the message has been sent (`bSuccess == true`) or when there was an error
 (`bSuccess == false`). 
 
-##### `fStop()`
+##### `undefined fStop()`
 Stop the `cSender` instance.
 
 ### `class cReceiver`
