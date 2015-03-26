@@ -1,0 +1,30 @@
+{
+  "name": "mudpjson",
+  "description": "Module with classes to send and receive data as JSON over UDP",
+  "keywords": [
+    "UDP",
+    "JSON",
+    "remote",
+    "network",
+    "data",
+    "stream"
+  ],
+  "version": "0.0.0",
+  "author": {
+    "name": "SkyLined",
+    "email": "berendjanwever@gmail.com",
+    "url": "https://github.com/SkyLined"
+  },
+  "bugs": {
+    "url": "https://github.com/SkyLined/mUDPJSON/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/SkyLined/mUDPJSON"
+  },
+  "main": "./index.js",
+  "engines": {
+    "node": ">=0.8.0"
+  },
+  "license": "CC0-1.0"
+}
