@@ -15,15 +15,16 @@ function cSender(dxOptions) {
   var uIPVersion = dxOptions.uIPVersion || 4;
   oThis._sHostname = dxOptions.sHostname || {4: "255.255.255.255", 6: "ff02::1"}[uIPVersion],
   oThis._uPort = dxOptions.uPort || 28876;
+  // When an attempt is made to send a packet larger than the MTU, an exception may be raised or the packet may be
+  // silently dropped. In the later case, you will need to specify a lower MTU value in order to communicate using UDP.
+  // In the former case, the exception is handled and used to determine the upper limit for the MTU value. The packet
+  // is then divided into smaller chunks and resend. TODO: figure out if a DoS is possible by making this machine
+  // believe the MTU is 0.
+  oThis._uUpperLimitForMTU = dxOptions.uMTU;
   oThis._sToString = "UDP" + uIPVersion + "@" + oThis._sHostname + ":" + oThis._uPort;
   oThis._oSocket = mDGram.createSocket("udp" + uIPVersion);
   oThis._aoSendQueue = [];
   oThis._bSendThreadRunning = false;
-  // The Maximum Transfer Unit (MTU) is unknown. When an attempt is made to send a packet larger than the MTU, an
-  // exception is raised. This exception is handled and used to determine the upper limit for the MTU value. The packet
-  // is then divided into smaller chunks and resent. TODO: figure out if a DoS is possible by making this machine
-  // believe the MTU is 0.
-  oThis._uUpperLimitForMTU = undefined;
 
   oThis._oSocket.on("listening", function cSender_on_oSocket_listening() {
     oThis._oSocket.setBroadcast(true);
@@ -103,7 +104,7 @@ function cSender_fSendBuffers(oThis) {
         if (oThis._aoSendQueue.length) {
           cSender_fSendBuffers(oThis);
         } else {
-          oThis.bSendThreadRunning = false;
+          oThis._bSendThreadRunning = false;
         }
       }
     }

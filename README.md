@@ -85,6 +85,8 @@ Where `dxOptions` is an object that can have the following properties:
 - `Number uIPVersion`: IP version to use (valid values: 4 (default), 6).
 - `String sHostname`: Target computer (default: broadcast to local subnet).
 - `Number uPort`: port number to send to (default: 28876).
+- `Number uMTU`: Maximum Transfer Unit (default: `undefined` - the code will
+                attempt to determine the value automatically if needed).
 
 #### Events:
 ##### `error`, parameter: `Error oError`
