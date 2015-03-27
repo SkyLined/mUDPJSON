@@ -12,38 +12,45 @@ function cSender(dxOptions) {
   // emits: error, start, stop
   var oThis = this;
   dxOptions = dxOptions || {};
-  oThis.uIPVersion = dxOptions.uIPVersion || 4;
-  oThis.sHostname = dxOptions.sHostname || {4: "255.255.255.255", 6: "ff02::1"}[oThis.uIPVersion],
-  oThis.uPort = dxOptions.uPort || 28876;
-  oThis.oSocket = mDGram.createSocket("udp" + oThis.uIPVersion);
-  oThis.bSending = false;
-  oThis.aoSendQueue = [];
-  oThis.bSendThreadRunning = false;
-  oThis.uMaxMTU = undefined;
+  var uIPVersion = dxOptions.uIPVersion || 4;
+  oThis._sHostname = dxOptions.sHostname || {4: "255.255.255.255", 6: "ff02::1"}[uIPVersion],
+  oThis._uPort = dxOptions.uPort || 28876;
+  oThis._sToString = "UDP" + uIPVersion + "@" + oThis._sHostname + ":" + oThis._uPort;
+  oThis._oSocket = mDGram.createSocket("udp" + uIPVersion);
+  oThis._aoSendQueue = [];
+  oThis._bSendThreadRunning = false;
+  // The Maximum Transfer Unit (MTU) is unknown. When an attempt is made to send a packet larger than the MTU, an
+  // exception is raised. This exception is handled and used to determine the upper limit for the MTU value. The packet
+  // is then divided into smaller chunks and resent. TODO: figure out if a DoS is possible by making this machine
+  // believe the MTU is 0.
+  oThis._uUpperLimitForMTU = undefined;
 
-  oThis.oSocket.on("listening", function cSender_on_oSocket_listening() {
-    oThis.oSocket.setBroadcast(true);
-    oThis.bSending = true;
+  oThis._oSocket.on("listening", function cSender_on_oSocket_listening() {
+    oThis._oSocket.setBroadcast(true);
     oThis.emit("start");
   });
-  oThis.oSocket.on("error", function cSender_on_oSocket_error(oError) {
+  oThis._oSocket.on("error", function cSender_on_oSocket_error(oError) {
     oThis.emit("error", oError); // pass-through
   });
-  oThis.oSocket.on("close", function cSender_on_oSocket_close() {
-    oThis.bSending = false;
-    oThis.oSocket = null;
+  oThis._oSocket.on("close", function cSender_on_oSocket_close() {
+    oThis._oSocket = null;
     oThis.emit("stop");
   });
-  oThis.oSocket.bind({
+  oThis._oSocket.bind({
     "exclusive": false,
   });
 }
 mUtil.inherits(cSender, mEvents.EventEmitter);
 
+cSender.prototype.toString = function cSender_toString() {
+  var oThis = this;
+  return oThis._sToString;
+};
+
 cSender.prototype.fSendMessage = function cSender_fSendMessage(xMessage, fCallback) {
   // callback argument: oError
   var oThis = this;
-  if (oThis.oSocket == null) {
+  if (oThis._oSocket == null) {
     throw new Error("The socket has been closed");
   }
   var sMessage = JSON.stringify(xMessage);
@@ -52,37 +59,37 @@ cSender.prototype.fSendMessage = function cSender_fSendMessage(xMessage, fCallba
   }
   var oMessageBuffer = new Buffer(sMessage.length + ";" + sMessage + ";");
   
-  oThis.aoSendQueue.push({"aoBuffers": [oMessageBuffer], "fCallback": fCallback});
-  if (!oThis.bSendThreadRunning) {
+  oThis._aoSendQueue.push({"aoBuffers": [oMessageBuffer], "fCallback": fCallback});
+  if (!oThis._bSendThreadRunning) {
     cSender_fSendBuffers(oThis);
   }
 }
 function cSender_fSendBuffers(oThis) {
-  oThis.bSendThreadRunning = true;
-  var aoBuffers = oThis.aoSendQueue[0].aoBuffers,
-      fCallback = oThis.aoSendQueue[0].fCallback;
+  oThis._bSendThreadRunning = true;
+  var aoBuffers = oThis._aoSendQueue[0].aoBuffers,
+      fCallback = oThis._aoSendQueue[0].fCallback;
   var oBuffer = aoBuffers.shift();
-  if (oThis.uMaxMTU && oBuffer.length >= oThis.uMaxMTU) {
-    var uNewBufferLength = oThis.uMaxMTU >> 1;
+  if (oThis._uUpperLimitForMTU && oBuffer.length >= oThis._uUpperLimitForMTU) {
+    var uNewBufferLength = oThis._uUpperLimitForMTU >> 1;
     aoBuffers.unshift(oBuffer.slice(uNewBufferLength));
     oBuffer = oBuffer.slice(0, uNewBufferLength);
   }
-  oThis.oSocket.send(oBuffer, 0, oBuffer.length, oThis.uPort, oThis.sHostname, function (oError) {
+  oThis._oSocket.send(oBuffer, 0, oBuffer.length, oThis._uPort, oThis._sHostname, function (oError) {
     if (oError) {
       if (oError.errno == "EMSGSIZE") {
         // The buffer was too large for sending as a single UDP packet, try again with MaxMTU set to the buffer's
         // size, causing the buffer to get chopped up into two smaller buffers before sending.
-        oThis.uMaxMTU = oBuffer.length;
+        oThis._uUpperLimitForMTU = oBuffer.length;
         aoBuffers.unshift(oBuffer);
         cSender_fSendBuffers(oThis);
       } else {
         oThis.fStop();
-        oThis.bSendThreadRunning = false;
+        oThis._bSendThreadRunning = false;
         // notify all queued callbacks
         fCallback && fCallback(oError);
-        oThis.aoSendQueue.shift();
-        while (oThis.aoSendQueue) {
-          fCallback = oThis.aoSendQueue.shift().fCallback;
+        oThis._aoSendQueue.shift();
+        while (oThis._aoSendQueue) {
+          fCallback = oThis._aoSendQueue.shift().fCallback;
           fCallback && fCallback(oError);
         }
       }
@@ -92,8 +99,8 @@ function cSender_fSendBuffers(oThis) {
         cSender_fSendBuffers(oThis);
       } else {
         fCallback && fCallback();
-        oThis.aoSendQueue.shift();
-        if (oThis.aoSendQueue.length) {
+        oThis._aoSendQueue.shift();
+        if (oThis._aoSendQueue.length) {
           cSender_fSendBuffers(oThis);
         } else {
           oThis.bSendThreadRunning = false;
@@ -104,5 +111,5 @@ function cSender_fSendBuffers(oThis) {
 }
 cSender.prototype.fStop = function cSender_fClose() {
   var oThis = this;
-  oThis.oSocket.close();
+  oThis._oSocket.close();
 }

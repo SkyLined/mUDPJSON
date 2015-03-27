@@ -13,28 +13,26 @@ function cReceiver(dxOptions) {
   // emits: error, start, message, stop
   var oThis = this;
   dxOptions = dxOptions || {};
-  oThis.uIPVersion = dxOptions.uIPVersion || 4;
-  oThis.sHostname = dxOptions.sHostname || mOS.hostname();
-  oThis.uPort = dxOptions.uPort || 28876;
-  oThis.oSocket = mDGram.createSocket("udp" + oThis.uIPVersion);
-  oThis.bReceiving = false;
-  oThis.bAcceptMessages = true;
+  var uIPVersion = dxOptions.uIPVersion || 4,
+      sHostname = dxOptions.sHostname || mOS.hostname(),
+      uPort = dxOptions.uPort || 28876;
+  oThis._sToString = "UDP" + uIPVersion + "@" + sHostname + ":" + uPort;
+  oThis._oSocket = mDGram.createSocket("udp" + uIPVersion);
+  oThis._bAcceptMessages = true;
   
-  oThis.oSocket.on("listening", function cReceiver_on_oSocket_listening() {
-    oThis.bReceiving = true;
+  oThis._oSocket.on("listening", function cReceiver_on_oSocket_listening() {
     oThis.emit("start");
   });
-  oThis.oSocket.on("error", function cReceiver_on_oSocket_error(oError) {
+  oThis._oSocket.on("error", function cReceiver_on_oSocket_error(oError) {
     oThis.emit("error", oError); // pass-through
   });
-  oThis.oSocket.on("close", function cReceiver_on_oSocket_close() {
-    oThis.bReceiving = false;
-    oThis.oSocket = null;
+  oThis._oSocket.on("close", function cReceiver_on_oSocket_close() {
+    oThis._oSocket = null;
     oThis.emit("stop");
   });
   var dsBuffer_by_oSender = {};
-  oThis.oSocket.on("message", function cReceiver_on_oSocket_message(oMessage, oRemoteAddress) {
-    if (oThis.bAcceptMessages) {
+  oThis._oSocket.on("message", function cReceiver_on_oSocket_message(oMessage, oRemoteAddress) {
+    if (oThis._bAcceptMessages) {
       var oSender = {"sHostname": oRemoteAddress.address, "uPort": oRemoteAddress.port};
       dsBuffer_by_oSender[oSender] = (dsBuffer_by_oSender[oSender] || "") + oMessage.toString();
       dsBuffer_by_oSender[oSender] = cReceiver_fsParseMessages(oThis, oSender, dsBuffer_by_oSender[oSender]);
@@ -44,18 +42,23 @@ function cReceiver(dxOptions) {
     }
   });
   
-  oThis.oSocket.bind({
-    "address": oThis.sHostname,
-    "port": oThis.uPort,
+  oThis._oSocket.bind({
+    "address": sHostname,
+    "port": uPort,
     "exclusive": false,
   });
 }
 mUtil.inherits(cReceiver, mEvents.EventEmitter);
 
+cReceiver.prototype.toString = function cReceiver_toString() {
+  var oThis = this;
+  return oThis._sToString;
+};
+
 cReceiver.prototype.fStop = function cReceiver_fStop() {
   var oThis = this;
-  oThis.bAcceptMessages = false;
-  oThis.oSocket.close();
+  oThis._bAcceptMessages = false;
+  oThis._oSocket.close();
 }
 
 function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
