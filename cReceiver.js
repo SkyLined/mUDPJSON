@@ -4,6 +4,7 @@ var guMaxMessageLength = 1000000; // bytes
 
 var mEvents = require("events"),
     mDGram = require("dgram"),
+    mDNS = require("dns"),
     mOS = require("os"),
     mUtil = require("util");
 
