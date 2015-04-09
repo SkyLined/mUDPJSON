@@ -43,11 +43,22 @@ function cReceiver(dxOptions) {
       delete dsBuffer_by_oSender[oSender];
     };
   });
-  
-  oThis._oSocket.bind({
-    "address": sHostname,
-    "port": uPort,
-    "exclusive": false,
+  // Wait a tick before looking up the hostname, so the caller has time to add
+  // an event listener for the "error" event that this may throw.
+  process.nextTick(function() {
+    mDNS.lookup(sHostname, {"family": uIPVersion}, function (oError, sAddress, uFamily) {
+      if (oError) {
+        oThis.emit("error", oError);
+      } else if (uFamily != uIPVersion) {
+        oThis.emit("error", new Error("requested address for IPv" + uIPVersion + ", got IPv" + uFamily));
+      } else {
+        oThis._oSocket && oThis._oSocket.bind({
+          "address": sAddress,
+          "port": uPort,
+          "exclusive": false,
+        });
+      };
+    });
   });
 };
 mUtil.inherits(cReceiver, mEvents.EventEmitter);
@@ -59,8 +70,7 @@ cReceiver.prototype.toString = function cReceiver_toString() {
 
 cReceiver.prototype.fStop = function cReceiver_fStop() {
   var oThis = this;
-  if (oThis._oSocket == null) throw new Error("The receiver is already stopped");
-  oThis._oSocket.close();
+  oThis._oSocket && oThis._oSocket.close();
 };
 
 function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {

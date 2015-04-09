@@ -55,8 +55,7 @@ cSender.prototype.toString = function cSender_toString() {
 
 cSender.prototype.fStop = function cSender_fStop() {
   var oThis = this;
-  if (oThis._oSocket == null) throw new Error("The sender is already stopped");
-  oThis._oSocket.close();
+  oThis._oSocket && oThis._oSocket.close();
 };
 
 cSender.prototype.fSendMessage = function cSender_fSendMessage(xMessage, fCallback) {
