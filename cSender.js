@@ -21,7 +21,7 @@ function cSender(dxOptions) {
   // is then divided into smaller chunks and resend. TODO: figure out if a DoS is possible by making this machine
   // believe the MTU is 0.
   oThis._uUpperLimitForMTU = dxOptions.uMTU;
-  oThis._sId = "UDP" + uIPVersion + "@" + oThis._sHostname + ":" + oThis._uPort;
+  var sId = "UDP" + uIPVersion + "@" + oThis._sHostname + ":" + oThis._uPort;
   Object.defineProperty(oThis, "sId", {"get": function () { return sId; }});
   var bStarted = false;
   Object.defineProperty(oThis, "bStarted", {"get": function () { return bStarted; }});

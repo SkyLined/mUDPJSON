@@ -16,8 +16,8 @@ function cReceiver(dxOptions) {
   dxOptions = dxOptions || {};
   var uIPVersion = dxOptions.uIPVersion || 4,
       sHostname = dxOptions.sHostname || mOS.hostname(),
-      uPort = dxOptions.uPort || 28876;
-  oThis._sId = "UDP" + uIPVersion + "@" + sHostname + ":" + uPort;
+      uPort = dxOptions.uPort || 28876,
+      sId = "UDP" + uIPVersion + "@" + sHostname + ":" + uPort;
   Object.defineProperty(oThis, "sId", {"get": function () { return sId; }});
   var bStarted = false;
   Object.defineProperty(oThis, "bStarted", {"get": function () { return bStarted; }});
