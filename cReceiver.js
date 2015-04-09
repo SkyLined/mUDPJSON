@@ -16,11 +16,15 @@ function cReceiver(dxOptions) {
   var uIPVersion = dxOptions.uIPVersion || 4,
       sHostname = dxOptions.sHostname || mOS.hostname(),
       uPort = dxOptions.uPort || 28876;
-  oThis._sToString = "UDP" + uIPVersion + "@" + sHostname + ":" + uPort;
+  oThis._sId = "UDP" + uIPVersion + "@" + sHostname + ":" + uPort;
+  Object.defineProperty(oThis, "sId", {"get": function () { return sId; }});
+  var bStarted = false;
+  Object.defineProperty(oThis, "bStarted", {"get": function () { return bStarted; }});
   oThis._oSocket = mDGram.createSocket("udp" + uIPVersion);
-  oThis._bAcceptMessages = true;
+  Object.defineProperty(oThis, "bStopped", {"get": function () { return oThis._oSocket == null; }});
   
   oThis._oSocket.on("listening", function cReceiver_on_oSocket_listening() {
+    bStarted = true;
     oThis.emit("start");
   });
   oThis._oSocket.on("error", function cReceiver_on_oSocket_error(oError) {
@@ -32,14 +36,12 @@ function cReceiver(dxOptions) {
   });
   var dsBuffer_by_oSender = {};
   oThis._oSocket.on("message", function cReceiver_on_oSocket_message(oMessage, oRemoteAddress) {
-    if (oThis._bAcceptMessages) {
-      var oSender = {"sHostname": oRemoteAddress.address, "uPort": oRemoteAddress.port};
-      dsBuffer_by_oSender[oSender] = (dsBuffer_by_oSender[oSender] || "") + oMessage.toString();
-      dsBuffer_by_oSender[oSender] = cReceiver_fsParseMessages(oThis, oSender, dsBuffer_by_oSender[oSender]);
-      if (!dsBuffer_by_oSender[oSender]) {
-        delete dsBuffer_by_oSender[oSender];
-      }
-    }
+    var oSender = {"sHostname": oRemoteAddress.address, "uPort": oRemoteAddress.port};
+    dsBuffer_by_oSender[oSender] = (dsBuffer_by_oSender[oSender] || "") + oMessage.toString();
+    dsBuffer_by_oSender[oSender] = cReceiver_fsParseMessages(oThis, oSender, dsBuffer_by_oSender[oSender]);
+    if (!dsBuffer_by_oSender[oSender]) {
+      delete dsBuffer_by_oSender[oSender];
+    };
   });
   
   oThis._oSocket.bind({
@@ -47,19 +49,19 @@ function cReceiver(dxOptions) {
     "port": uPort,
     "exclusive": false,
   });
-}
+};
 mUtil.inherits(cReceiver, mEvents.EventEmitter);
 
 cReceiver.prototype.toString = function cReceiver_toString() {
   var oThis = this;
-  return oThis._sToString;
+  return oThis.sId;
 };
 
 cReceiver.prototype.fStop = function cReceiver_fStop() {
   var oThis = this;
-  oThis._bAcceptMessages = false;
+  if (oThis._oSocket == null) throw new Error("The receiver is already stopped");
   oThis._oSocket.close();
-}
+};
 
 function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
   while (sBuffer) {
@@ -79,9 +81,9 @@ function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
           bInvalidMessageLength = uMessageLength.constructor != Number || uMessageLength <= 0 || uMessageLength > guMaxMessageLength;
         } catch (oError) {
           bInvalidMessageLength = true;
-        }
-      }
-    }
+        };
+      };
+    };
     if (bInvalidMessageLength) {
       // The remote is not making any sense, disconnect.
       oThis.emit("message", oSender, new Error("Invalid message length: " + JSON.stringify(sLength + sBuffer.charAt(uLengthEndIndex))), undefined);
@@ -105,11 +107,11 @@ function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
             var xMessage = JSON.parse(sMessage);
           } catch (oJSONError) {
             var oError = oJSONError;
-          }
+          };
           sBuffer = sBuffer.substr(uMessageEndIndex + 1);
           oThis.emit("message", oSender, oError, xMessage);
-        }
-      }
-    }
-  }
-}
+        };
+      };
+    };
+  };
+};
