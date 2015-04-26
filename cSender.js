@@ -1,9 +1,9 @@
 module.exports = cSender;
 
-var guMaxMessageLength = 1000000; // bytes
-
 var mEvents = require("events"),
     mDGram = require("dgram");
+    cSender_fSendBuffers = require("./cSender_fSendBuffers"),
+    mSettings = require("./mSettings"),
     mUtil = require("util");
 
 function cSender(dxOptions) {
@@ -12,9 +12,9 @@ function cSender(dxOptions) {
   // emits: error, start, stop
   var oThis = this;
   dxOptions = dxOptions || {};
-  var uIPVersion = dxOptions.uIPVersion || 4;
+  var uIPVersion = dxOptions.uIPVersion || mSettings.uIPVersion;
   oThis._sHostname = dxOptions.sHostname || {4: "255.255.255.255", 6: "ff02::1"}[uIPVersion],
-  oThis._uPort = dxOptions.uPort || 28876;
+  oThis._uPort = dxOptions.uPort || mSettings.uPort;
   // When an attempt is made to send a packet larger than the MTU, an exception may be raised or the packet may be
   // silently dropped. In the later case, you will need to specify a lower MTU value in order to communicate using UDP.
   // In the former case, the exception is handled and used to determine the upper limit for the MTU value. The packet
@@ -65,7 +65,7 @@ cSender.prototype.fSendMessage = function cSender_fSendMessage(xMessage, fCallba
     throw new Error("The socket has been closed");
   };
   var sMessage = JSON.stringify(xMessage);
-  if (sMessage.length > guMaxMessageLength) {
+  if (sMessage.length > mSettings.uMaxMessageLength) {
     throw new Error("Message is too large to send");
   };
   var oMessageBuffer = new Buffer(sMessage.length + ";" + sMessage + ";");
@@ -73,55 +73,6 @@ cSender.prototype.fSendMessage = function cSender_fSendMessage(xMessage, fCallba
   oThis._aoSendQueue.push({"aoBuffers": [oMessageBuffer], "fCallback": fCallback});
   if (!oThis._bSendThreadRunning) {
     cSender_fSendBuffers(oThis);
-  };
-};
-function cSender_fSendBuffers(oThis) {
-  if (oThis._oSocket == null) {
-    fCallback && fCallback(new Error("The socket has been closed"));
-  } else {
-    oThis._bSendThreadRunning = true;
-    var aoBuffers = oThis._aoSendQueue[0].aoBuffers,
-        fCallback = oThis._aoSendQueue[0].fCallback;
-    var oBuffer = aoBuffers.shift();
-    if (oThis._uUpperLimitForMTU && oBuffer.length >= oThis._uUpperLimitForMTU) {
-      var uNewBufferLength = oThis._uUpperLimitForMTU >> 1;
-      aoBuffers.unshift(oBuffer.slice(uNewBufferLength));
-      oBuffer = oBuffer.slice(0, uNewBufferLength);
-    };
-    oThis._oSocket.send(oBuffer, 0, oBuffer.length, oThis._uPort, oThis._sHostname, function (oError) {
-      if (oError) {
-        if (oError.errno == "EMSGSIZE") {
-          // The buffer was too large for sending as a single UDP packet, try again with MaxMTU set to the buffer's
-          // size, causing the buffer to get chopped up into two smaller buffers before sending.
-          oThis._uUpperLimitForMTU = oBuffer.length;
-          aoBuffers.unshift(oBuffer);
-          cSender_fSendBuffers(oThis);
-        } else {
-          oThis.fStop();
-          oThis._bSendThreadRunning = false;
-          // notify all queued callbacks
-          fCallback && fCallback(oError);
-          oThis._aoSendQueue.shift();
-          while (oThis._aoSendQueue) {
-            fCallback = oThis._aoSendQueue.shift().fCallback;
-            fCallback && fCallback(oError);
-          };
-        };
-      } else {
-        if (aoBuffers.length) {
-          // buffers sent, but more to be done, so sent the next:
-          cSender_fSendBuffers(oThis);
-        } else {
-          fCallback && fCallback();
-          oThis._aoSendQueue.shift();
-          if (oThis._aoSendQueue.length) {
-            cSender_fSendBuffers(oThis);
-          } else {
-            oThis._bSendThreadRunning = false;
-          };
-        };
-      };
-    });
   };
 };
 cSender.prototype.fStop = function cSender_fClose() {

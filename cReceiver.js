@@ -1,11 +1,10 @@
 module.exports = cReceiver;
 
-var guMaxMessageLength = 1000000; // bytes
-
 var mEvents = require("events"),
     mDGram = require("dgram"),
     mDNS = require("dns"),
     mOS = require("os"),
+    cReceiver_fsParseMessages = require("./cReceiver_fsParseMessages"),
     mUtil = require("util");
 
 function cReceiver(dxOptions) {
@@ -14,9 +13,9 @@ function cReceiver(dxOptions) {
   // emits: error, start, message, stop
   var oThis = this;
   dxOptions = dxOptions || {};
-  var uIPVersion = dxOptions.uIPVersion || 4,
+  var uIPVersion = dxOptions.uIPVersion || mSettings.uIPVersion,
       sHostname = dxOptions.sHostname || mOS.hostname(),
-      uPort = dxOptions.uPort || 28876,
+      uPort = dxOptions.uPort || mSettings.uPort,
       sId = "UDP" + uIPVersion + "@" + sHostname + ":" + uPort;
   Object.defineProperty(oThis, "sId", {"get": function () { return sId; }});
   var bStarted = false;
@@ -74,55 +73,3 @@ cReceiver.prototype.fStop = function cReceiver_fStop() {
   oThis._oSocket && oThis._oSocket.close();
 };
 
-function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
-  while (sBuffer) {
-    var sLength = sBuffer.substr(0, guMaxMessageLength + 1),
-        uLengthEndIndex = sLength.indexOf(";"),
-        bInvalidMessageLength = false,
-        bValidMessageLength = false,
-        uMessageLength;
-    if (uLengthEndIndex == -1) {
-      bInvalidMessageLength = sLength.length > guMaxMessageLength.toString().length;
-    } else {
-      var sLength = sLength.substr(0, uLengthEndIndex);
-      bInvalidMessageLength = sLength.length > guMaxMessageLength.toString().length;
-      if (!bInvalidMessageLength) {
-        try {
-          uMessageLength = JSON.parse(sLength);
-          bInvalidMessageLength = uMessageLength.constructor != Number || uMessageLength <= 0 || uMessageLength > guMaxMessageLength;
-        } catch (oError) {
-          bInvalidMessageLength = true;
-        };
-      };
-    };
-    if (bInvalidMessageLength) {
-      // The remote is not making any sense, disconnect.
-      oThis.emit("message", oSender, new Error("Invalid message length: " + JSON.stringify(sLength + sBuffer.charAt(uLengthEndIndex))), undefined);
-      return;
-    } else if (uMessageLength == undefined) {
-      // The message length has not been received entirely yet.
-      return sBuffer;
-    } else {
-      var uMessageStartIndex = uLengthEndIndex + 1,
-          uMessageEndIndex = uMessageStartIndex + uMessageLength;
-      if (sBuffer.length < uMessageEndIndex + 1) {
-        // The message length has been received entirely but the message only partially
-        return sBuffer;
-      } else {
-        sMessage = sBuffer.substr(uMessageStartIndex, uMessageEndIndex - uMessageStartIndex);
-        if (sBuffer.charAt(uMessageEndIndex) != ";") {
-          oThis.emit("message", oSender, new Error("Message is missing semi-colon: " + JSON.stringify(sMessage + sBuffer.charAt(uMessageEndIndex))), undefined);
-          return;
-        } else {
-          try {
-            var xMessage = JSON.parse(sMessage);
-          } catch (oJSONError) {
-            var oError = oJSONError;
-          };
-          sBuffer = sBuffer.substr(uMessageEndIndex + 1);
-          oThis.emit("message", oSender, oError, xMessage);
-        };
-      };
-    };
-  };
-};
