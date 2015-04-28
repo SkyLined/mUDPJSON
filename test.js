@@ -1,12 +1,11 @@
-var cSender = require("./cSender.js"),
-    cReceiver = require("./cReceiver.js");
+var mUDPJSON = require("./index");
 
 var bMessageSent = false,
     bMessageReceived = false,
     bSenderStopped = false,
     bReceiverStopped = false,
-    oReceiver = new cReceiver(),
-    oSender = new cSender();
+    oReceiver = new mUDPJSON.cReceiver(),
+    oSender = new mUDPJSON.cSender();
 oReceiver.on("start", function () {
   console.log("Receiver started (" + oReceiver + ")");
   fSendMessageWhenReady();
