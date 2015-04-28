@@ -1,6 +1,11 @@
 @ECHO OFF
 CALL :SHOW_FOLDER_NAME "%CD%"
 :START
+  CALL node test.js
+  IF ERRORLEVEL 1 (
+    ECHO === Test failed!
+    GOTO :ERROR
+  )
   ECHO === Updating version number...
   CALL npm version patch -m "Version updated to %%%%s"
   IF ERRORLEVEL 1 (
