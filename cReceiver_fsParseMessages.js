@@ -1,21 +1,23 @@
-var mSettings = require("./mSettings");
+module.exports = cReceiver_fsParseMessages;
 
-module.exports = function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
+var dxSettings = require("./dxSettings");
+
+function cReceiver_fsParseMessages(oThis, oSender, sBuffer) {
   while (sBuffer) {
-    var sLength = sBuffer.substr(0, mSettings.uMaxMessageLength + 1),
+    var sLength = sBuffer.substr(0, dxSettings.uMaxMessageLength + 1),
         uLengthEndIndex = sLength.indexOf(";"),
         bInvalidMessageLength = false,
         bValidMessageLength = false,
         uMessageLength;
     if (uLengthEndIndex == -1) {
-      bInvalidMessageLength = sLength.length > mSettings.uMaxMessageLength.toString().length;
+      bInvalidMessageLength = sLength.length > dxSettings.uMaxMessageLength.toString().length;
     } else {
       var sLength = sLength.substr(0, uLengthEndIndex);
-      bInvalidMessageLength = sLength.length > mSettings.uMaxMessageLength.toString().length;
+      bInvalidMessageLength = sLength.length > dxSettings.uMaxMessageLength.toString().length;
       if (!bInvalidMessageLength) {
         try {
           uMessageLength = JSON.parse(sLength);
-          bInvalidMessageLength = uMessageLength.constructor != Number || uMessageLength <= 0 || uMessageLength > mSettings.uMaxMessageLength;
+          bInvalidMessageLength = uMessageLength.constructor != Number || uMessageLength <= 0 || uMessageLength > dxSettings.uMaxMessageLength;
         } catch (oError) {
           bInvalidMessageLength = true;
         };

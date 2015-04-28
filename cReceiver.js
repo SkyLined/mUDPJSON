@@ -8,14 +8,14 @@ var mEvents = require("events"),
     mUtil = require("util");
 
 function cReceiver(dxOptions) {
-  if (this.constructor != arguments.callee) return new arguments.callee(dxOptions);
+  if (this.constructor != arguments.callee) throw new Error("This is a constructor, not a function");
   // options: uIPVersion, sHostname, uPort
   // emits: error, start, message, stop
   var oThis = this;
   dxOptions = dxOptions || {};
-  var uIPVersion = dxOptions.uIPVersion || mSettings.uIPVersion,
+  var uIPVersion = dxOptions.uIPVersion || dxSettings.uIPVersion,
       sHostname = dxOptions.sHostname || mOS.hostname(),
-      uPort = dxOptions.uPort || mSettings.uPort,
+      uPort = dxOptions.uPort || dxSettings.uPort,
       sId = "UDP" + uIPVersion + "@" + sHostname + ":" + uPort;
   Object.defineProperty(oThis, "sId", {"get": function () { return sId; }});
   var bStarted = false;

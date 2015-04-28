@@ -3,18 +3,18 @@ module.exports = cSender;
 var mEvents = require("events"),
     mDGram = require("dgram");
     cSender_fSendBuffers = require("./cSender_fSendBuffers"),
-    mSettings = require("./mSettings"),
+    dxSettings = require("./dxSettings"),
     mUtil = require("util");
 
 function cSender(dxOptions) {
-  if (this.constructor != arguments.callee) return new arguments.callee(dxOptions);
+  if (this.constructor != arguments.callee) throw new Error("This is a constructor, not a function");
   // options: uIPVersion, sHostname, uPort
   // emits: error, start, stop
   var oThis = this;
   dxOptions = dxOptions || {};
-  var uIPVersion = dxOptions.uIPVersion || mSettings.uIPVersion;
+  var uIPVersion = dxOptions.uIPVersion || dxSettings.uIPVersion;
   oThis._sHostname = dxOptions.sHostname || {4: "255.255.255.255", 6: "ff02::1"}[uIPVersion],
-  oThis._uPort = dxOptions.uPort || mSettings.uPort;
+  oThis._uPort = dxOptions.uPort || dxSettings.uPort;
   // When an attempt is made to send a packet larger than the MTU, an exception may be raised or the packet may be
   // silently dropped. In the later case, you will need to specify a lower MTU value in order to communicate using UDP.
   // In the former case, the exception is handled and used to determine the upper limit for the MTU value. The packet
@@ -65,7 +65,7 @@ cSender.prototype.fSendMessage = function cSender_fSendMessage(xMessage, fCallba
     throw new Error("The socket has been closed");
   };
   var sMessage = JSON.stringify(xMessage);
-  if (sMessage.length > mSettings.uMaxMessageLength) {
+  if (sMessage.length > dxSettings.uMaxMessageLength) {
     throw new Error("Message is too large to send");
   };
   var oMessageBuffer = new Buffer(sMessage.length + ";" + sMessage + ";");

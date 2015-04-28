@@ -1,4 +1,6 @@
-module.exports = function cSender_fSendBuffers(oThis) {
+module.exports = cSender_fSendBuffers;
+
+function cSender_fSendBuffers(oThis) {
   if (oThis._oSocket == null) {
     fCallback && fCallback(new Error("The socket has been closed"));
   } else {
