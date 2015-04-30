@@ -55,7 +55,7 @@ function cReceiver(dxOptions) {
         oThis._oSocket && oThis._oSocket.bind({
           "address": sAddress,
           "port": uPort,
-          "exclusive": false,
+          "exclusive": false, // This appears to have no effect :(.
         });
       };
     });
